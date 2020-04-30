@@ -1,31 +1,36 @@
 const Sentry = require('@sentry/node')
 Sentry.init({ dsn: process.env.SENTRY_DSN })
 
-const fetch = require('node-fetch')
+const DiscordAPI = require('./DiscordAPI.js')
+const discord = new DiscordAPI({ token: process.argv[2] })
 
-const LANG = 'en_US'
+const RiotServiceStatusAPI = require('./RiotServiceStatusAPI.js')
 
-fetch('https://lol.secure.dyn.riotcdn.net/channels/public/x/status/na1.json').then(res => res.json()).then(json => {
-  console.log(json)
-  json.incidents.forEach(incident => {
-    fetch('https://discordapp.com/api/channels/445647209892020234/messages', {
-      method: 'post',
-      body: JSON.stringify({
-        embed: {
-          title: incident.titles.find(t => t.locale === LANG).content,
-          description: incident.updates[0].translations.find(t => t.locale === LANG).content,
-          author: {
-            name: 'Status de Serviço da Riot Games',
-            url: `https://status.riotgames.com/?locale=${LANG}`,
-            icon_url: 'https://i.imgur.com/T2pSiG9.png'
-          },
-          color: 13776442
-        }
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bot ${process.argv[2]}`
-      }
-    })
-  })
+const services = require('./services.json')
+
+// CRITICAL - #be29cc
+// WARNING - #e69700
+// INFORMATIONAL - 7e7e7e
+
+Promise.all(services.map(service => {
+  return Promise.all(service.regions.map(region => {
+    return RiotServiceStatusAPI.getStatus(service.name, region)
+  }))
+})).then(serviceStatuses => {
+  // do stuff with the statuses here
 })
+
+function sendOcurrenceMessage (ocurrence, channelId, language = 'en_US') {
+  discord.sendMessage(channelId, {
+    embed: {
+      title: ocurrence.titles.find(t => t.locale === language).content,
+      description: ocurrence.updates[0].translations.find(t => t.locale === language).content,
+      author: {
+        name: 'Status de Serviço da Riot Games',
+        url: `https://status.riotgames.com/?locale=${language}`,
+        icon_url: 'https://i.imgur.com/T2pSiG9.png'
+      },
+      color: 13776442
+    }
+  })
+}

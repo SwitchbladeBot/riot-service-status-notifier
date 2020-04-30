@@ -1,0 +1,35 @@
+[
+    {
+        "name": "lol",
+        "regions": [
+            "br1",
+            "eun1",
+            "euw1",
+            "jp1",
+            "kr1",
+            "la1",
+            "la2",
+            "na1",
+            "oc1",
+            "pbe",
+            "ru1",
+            "tr1"
+        ]
+    },
+    {
+        "name": "riot-client",
+        "regions": [
+            "keystonefoundationlive",
+            "keystonefoundationbeta"
+        ]
+    },
+    {
+        "name": "bacon",
+        "regions": [
+            "americas",
+            "asia",
+            "europe",
+            "sea"
+        ]
+    }
+]
