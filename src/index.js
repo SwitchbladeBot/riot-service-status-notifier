@@ -5,7 +5,7 @@ const fetch = require('node-fetch')
 
 const LANG = 'en_US'
 
-fetch('https://lol.secure.dyn.riotcdn.net/channels/public/x/status/na1.json').then(res => res.json()).then( json => {
+fetch('https://lol.secure.dyn.riotcdn.net/channels/public/x/status/na1.json').then(res => res.json()).then(json => {
   console.log(json)
   json.incidents.forEach(incident => {
     fetch('https://discordapp.com/api/channels/445647209892020234/messages', {
@@ -24,7 +24,7 @@ fetch('https://lol.secure.dyn.riotcdn.net/channels/public/x/status/na1.json').th
       }),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bot ${process.argv[2]}`
+        Authorization: `Bot ${process.argv[2]}`
       }
     })
   })
