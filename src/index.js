@@ -6,18 +6,33 @@ const discord = new DiscordAPI({ token: process.argv[2] })
 
 const RiotServiceStatusAPI = require('./RiotServiceStatusAPI.js')
 
-const services = require('./services.json')
+const servicesConfig = require('./services.json')
 
 // CRITICAL - #be29cc
 // WARNING - #e69700
 // INFORMATIONAL - 7e7e7e
 
-Promise.all(services.map(service => {
+const incidents = []
+
+Promise.all(servicesConfig.map(service => {
   return Promise.all(service.regions.map(region => {
     return RiotServiceStatusAPI.getStatus(service.name, region)
   }))
-})).then(serviceStatuses => {
-  // do stuff with the statuses here
+})).then(services => {
+  services.forEach(serviceRegions => {
+    const ocurrences = []
+    serviceRegions.forEach(region => {
+      ['incidents', 'maintenances'].forEach(ocurrenceType => {
+        region[ocurrenceType].forEach(incident => {
+          if (ocurrences.findIndex(o => incident.id === o.id) === -1) ocurrences.push(incident)
+        })
+      })
+    })
+    ocurrences.forEach(ocurrence => {
+      console.log(ocurrence)
+      sendOcurrenceMessage(ocurrence, '516243264635011072')
+    })
+  })
 })
 
 function sendOcurrenceMessage (ocurrence, channelId, language = 'en_US') {
