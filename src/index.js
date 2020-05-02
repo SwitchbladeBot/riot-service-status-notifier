@@ -12,8 +12,6 @@ const servicesConfig = require('./services.json')
 // WARNING - #e69700
 // INFORMATIONAL - 7e7e7e
 
-const incidents = []
-
 Promise.all(servicesConfig.map(service => {
   return Promise.all(service.regions.map(region => {
     return RiotServiceStatusAPI.getStatus(service.name, region)
