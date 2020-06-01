@@ -31,5 +31,16 @@
             "europe",
             "sea"
         ]
+    },
+    {
+        "name": "valorant",
+        "regions": [
+            "ap",
+            "br",
+            "eu",
+            "kr",
+            "latam",
+            "na"
+        ]
     }
 ]
