@@ -86,6 +86,7 @@ Promise.all([
   })
 })
 
+/** Checks if an ocurrence has been updated/created after `lastRun` */
 function isOcurrenceNew (ocurrence, lastRun) {
   const createdDate = new Date(ocurrence.created_at || 0)
   const updatedDate = new Date(ocurrence.updated_at || 0)
@@ -93,12 +94,14 @@ function isOcurrenceNew (ocurrence, lastRun) {
   return false
 }
 
+/** Gets the timestamp for when this CronJob was last run */
 async function getLastRunDate (database) {
   const globalConfigCollection = database.collection('globalconfig')
   const lastRunDoc = await globalConfigCollection.findOne({ _id: 'riot-service-status-notifier:lastRun' })
   return lastRunDoc ? new Date(lastRunDoc.value) : new Date(0)
 }
 
+/** Updates the timestamp to now */
 async function updateLastRunDate (database) {
   const globalConfigCollection = database.collection('globalconfig')
   await globalConfigCollection.findOneAndUpdate({
@@ -110,6 +113,7 @@ async function updateLastRunDate (database) {
   }, { upsert: true })
 }
 
+/** Sends a message to Discord about an ocurrence */
 function sendOcurrenceMessage (ocurrence, channelId, language = 'en_US') {
   discord.sendMessage(channelId, {
     embed: {
@@ -128,11 +132,12 @@ function sendOcurrenceMessage (ocurrence, channelId, language = 'en_US') {
   }).catch(console.error)
 }
 
+/** Returns an array with all filter strings for an array of ocurrences */
 function getFilterArray (ocurrences) {
   function addFilter (filterString) {
     if (!filters.includes(filterString)) filters.push(filterString)
   }
-  const filters = ['*']
+  const filters = []
   ocurrences.forEach(ocurrence => {
     getOcurrenceFilters(ocurrence).forEach(addFilter)
   })
@@ -140,6 +145,7 @@ function getFilterArray (ocurrences) {
   return filters
 }
 
+/** Returns an array with filter strings (`*`, `service.*` and `service.region`) for a given ocurrence */
 function getOcurrenceFilters (ocurrence) {
   return [
     '*',
@@ -150,6 +156,7 @@ function getOcurrenceFilters (ocurrence) {
   ]
 }
 
+/** Returns the right embed color for a given ocurrence */
 function getOcurrenceColor (ocurrence) {
   const colors = {
     warning: 0xe69700,
