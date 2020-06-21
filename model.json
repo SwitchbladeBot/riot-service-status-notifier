@@ -1,0 +1,30 @@
+{
+    "_id": "g23489h458gh428953hj2k52",
+    "source": "riotservicestatus",
+    "event": "status_update",
+    "enabled": true,
+    "guild_id": "7634758634895789347",
+    "channel_id": "759837583476893768",
+    "custom_messages": {
+        "enabled": true,
+        "messages": [
+            {
+                "content": "{pipipipipopopopo}",
+                "embed": {
+                    "fields": [
+                        {
+                            "title": "aaaaaaaaaaa"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "settings": {
+        "filters": [
+            "valorant.br",
+            "valorant.eu",
+            "*"
+        ]
+    }
+}
