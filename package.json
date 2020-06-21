@@ -3,12 +3,16 @@
   "main": "src/index.js",
   "author": "Switchblade Team",
   "license": "MIT",
+  "scripts": {
+    "dev": "node -r dotenv/config src/index.js"
+  },
   "devDependencies": {
     "dotenv": "^8.2.0",
     "standard": "^14.3.3"
   },
   "dependencies": {
     "@sentry/node": "^5.15.5",
+    "mongodb": "^3.5.9",
     "node-fetch": "^2.6.0",
     "winston": "^3.2.1"
   }
