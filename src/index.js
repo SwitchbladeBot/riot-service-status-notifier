@@ -12,39 +12,48 @@ const RiotServiceStatusAPI = require('./RiotServiceStatusAPI.js')
 const servicesConfig = require('./services.json')
 
 Promise.all([
-  mongo.connect(),
+  mongo.connect().then(() => {
+    console.info('Connected to the database')
+  }),
   Promise.all(servicesConfig.map(service => {
     return Promise.all(service.regions.map(async region => {
-      console.log(`Fetching ocurrences for ${service.name} ${region}`)
+      console.debug(`Fetching ocurrences for ${service.name} ${region}`)
       const serviceStatus = await RiotServiceStatusAPI.getStatus(service.name, region)
-      console.info(`Got ocurrences for ${service.name} ${region}`)
+      console.debug(`Finished fetching ocurrences for ${service.name} ${region}`)
       return {
         serviceName: service.name,
         ...serviceStatus
       }
     }))
-  }))
+  })).then(services => {
+    console.info('All ocurrences received')
+    return services
+  })
 ]).then(async ([, services]) => {
   const database = mongo.db(process.env.MONGODB_DATABASE)
-  const collection = database.collection('notifications')
+  const notificationCollection = database.collection('notifications')
+
+  const lastRun = await getLastRunDate(database)
 
   const ocurrences = []
   services.forEach(serviceRegions => {
     serviceRegions.forEach(region => {
       ['incidents', 'maintenances'].forEach(ocurrenceType => {
-        region[ocurrenceType].forEach(incident => {
-          const ocurrenceIndex = ocurrences.findIndex(o => incident.id === o.id)
-          if (ocurrenceIndex === -1) {
-            ocurrences.push({
-              ocurrenceType,
-              serviceName: region.serviceName,
-              affectedRegions: [region.id.toLowerCase()],
-              ...incident
-            })
-          } else {
-            ocurrences[ocurrenceIndex] = {
-              affectedRegions: ocurrences[ocurrenceIndex].affectedRegions.push(region.id.toLowerCase()),
-              ...ocurrences[ocurrenceIndex]
+        region[ocurrenceType].forEach(ocurrence => {
+          if (isOcurrenceNew(ocurrence, lastRun)) {
+            const ocurrenceIndex = ocurrences.findIndex(o => ocurrence.id === o.id)
+            if (ocurrenceIndex === -1) {
+              ocurrences.push({
+                ocurrenceType,
+                serviceName: region.serviceName,
+                affectedRegions: [region.id.toLowerCase()],
+                ...ocurrence
+              })
+            } else {
+              ocurrences[ocurrenceIndex] = {
+                affectedRegions: ocurrences[ocurrenceIndex].affectedRegions.push(region.id.toLowerCase()),
+                ...ocurrences[ocurrenceIndex]
+              }
             }
           }
         })
@@ -54,7 +63,8 @@ Promise.all([
 
   const filters = getFilterArray(ocurrences)
 
-  collection.find({
+  console.info('Fetching configs from the database')
+  notificationCollection.find({
     source: 'riotservicestatus',
     event: 'status_update',
     enabled: true,
@@ -62,6 +72,9 @@ Promise.all([
       $in: filters
     }
   }).toArray().then(configs => {
+    console.info(`Got ${configs.length} configs with these filters`)
+    console.info('Closing database connection')
+    updateLastRunDate(database)
     mongo.close()
     ocurrences.forEach(ocurrence => {
       const filters = getOcurrenceFilters(ocurrence)
@@ -72,6 +85,30 @@ Promise.all([
     })
   })
 })
+
+function isOcurrenceNew (ocurrence, lastRun) {
+  const createdDate = new Date(ocurrence.created_at || 0)
+  const updatedDate = new Date(ocurrence.updated_at || 0)
+  if (createdDate.getTime() > lastRun.getTime() || updatedDate.getTime > lastRun.getTime()) return true
+  return false
+}
+
+async function getLastRunDate (database) {
+  const globalConfigCollection = database.collection('globalconfig')
+  const lastRunDoc = await globalConfigCollection.findOne({ _id: 'riot-service-status-notifier:lastRun' })
+  return lastRunDoc ? new Date(lastRunDoc.value) : new Date(0)
+}
+
+async function updateLastRunDate (database) {
+  const globalConfigCollection = database.collection('globalconfig')
+  await globalConfigCollection.findOneAndUpdate({
+    _id: 'riot-service-status-notifier:lastRun'
+  }, {
+    $set: {
+      value: Date.now()
+    }
+  }, { upsert: true })
+}
 
 function sendOcurrenceMessage (ocurrence, channelId, language = 'en_US') {
   discord.sendMessage(channelId, {
