@@ -17,6 +17,7 @@ Promise.all([
     return Promise.all(service.regions.map(async region => {
       console.log(`Fetching ocurrences for ${service.name} ${region}`)
       const serviceStatus = await RiotServiceStatusAPI.getStatus(service.name, region)
+      console.info(`Got ocurrences for ${service.name} ${region}`)
       return {
         serviceName: service.name,
         ...serviceStatus
