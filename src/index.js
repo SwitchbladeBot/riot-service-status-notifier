@@ -17,12 +17,17 @@ Promise.all([
   }),
   Promise.all(servicesConfig.map(service => {
     return Promise.all(service.regions.map(async region => {
-      console.debug(`Fetching ocurrences for ${service.name} ${region}`)
-      const serviceStatus = await RiotServiceStatusAPI.getStatus(service.name, region)
-      console.debug(`Finished fetching ocurrences for ${service.name} ${region}`)
-      return {
-        serviceName: service.name,
-        ...serviceStatus
+      try {
+        console.debug(`Fetching ocurrences for ${service.name} ${region}`)
+        const serviceStatus = await RiotServiceStatusAPI.getStatus(service.name, region)
+        console.debug(`Finished fetching ocurrences for ${service.name} ${region}`)
+        return {
+          serviceName: service.name,
+          ...serviceStatus
+        }
+      } catch (e) {
+        console.error(e)
+        process.exit(0)
       }
     }))
   })).then(services => {
